@@ -243,8 +243,9 @@ def sequence_remaining_wt_ref(snp):
     return temp_file_name
 
 def run_blastn(putative_pks_input_file):
+    #this is the principle functional of the RSC module
     print(time.ctime(time.time()), 'time')
-    #try:
+    #this tracks the number of runs that have occurred for naming purposes
     number_runs = open('run_ID.txt', 'r')
     number_runs_lines = number_runs.readlines()
     print(number_runs_lines)
@@ -255,19 +256,20 @@ def run_blastn(putative_pks_input_file):
     number_runs = open('run_ID.txt', 'w')
     number_runs.write(str(this_run_num)+'\n')
     number_runs.close()
-    #except:
-    #    number_runs = open('run_ID.txt', 'w')
-    #    number_runs.write('1\n')
-    #    this_run_num = 1
     
+    #this is the working directory of the pipeline
     os.chdir('SARS_CoV_2')
+    #The ref seq of SARS-CoV-2
     ref_file = '../NC_045512.2_SARS_CoV_2_ref_seq.fasta'
+    #this directory contains isolate genomes of the virus
     os.chdir('all_SARS_CoV_2_genomes_no_ref')
     all_snps = []
     all_files = []
     #for file in os.listdir():
     #    if 'Pass' not in file and 'blastn' not in file and 'snps' not in file:
     #        extract_fasta_files(file)
+    
+    #this loops through every genome in the file
     for num_file, file in enumerate(os.listdir()):
         print('\n==========================================================\n'+file+'\n')
         #this ensures that it is a genomic file that is being scanned
@@ -390,33 +392,42 @@ def run_blastn(putative_pks_input_file):
     print(time.ctime(time.time()), 'time')
 
 
-
+#this function takes ambiguous bases and formats them as separate possible SNPs in the list of SNPs
 def add_snps_nomenclature(list_snps):
     list_names = ['R', 'Y', 'M', 'K', 'S','W','H','B','V','D','N']
     list_replacements = [['G', 'A'], ['T', 'C'], ['A', 'C'], ['G', 'T'], ['G', 'C'],['A', 'T'],['A','C', 'T'], ['G', 'T', 'C'], ['G','C', 'A'],['G','T','A'], ['G','C','A','T']]
     i = 0
+    #loops through the list of SNPs to determine if they contain ambiguity
     while i <= len(list_snps)-1:
         list_snps[i].alt = list_snps[i].alt.capitalize()
+        #finds ambiguous bases
         if list_snps[i].alt.capitalize() in list_names:
             index_value = list_names.index(list_snps[i].alt.capitalize())
+            #grabs bases with unknown identities
             if list_snps[i].alt.capitalize() == 'N':
-                print(list_replacements[-1], 'a')
+                #print(list_replacements[-1], 'a')
                 sub_list = list_replacements[-1]
-                print(sub_list, 'b')
+                #print(sub_list, 'b')
                 sub2 = sub_list
-                print(list_snps[i].wt, list_snps[i].alt, str(list_snps[i].pos))
+                #print(list_snps[i].wt, list_snps[i].alt, str(list_snps[i].pos))
                 if list_snps[i].wt != '-':
                     sub2.remove(list_snps[i].wt)
-                print(sub2, 'c')
+                #print(sub2, 'c')
                 list_snps[i].alt = sub2[0]
                 for replacement in sub2[1:]:
                     temp_snp = SNP(list_snps[i].wt, replacement,list_snps[i].pos,'bogus/bogus',list_snps[i].line_beginning,list_snps[i].number_in_line)
                     temp_snp.file = list_snps[i].file
                     temp_snp.isolate = list_snps[i].isolate
                 list_snps.append(temp_snp)
+                
+                ###WTF does this line even do? 
+                ###seems like it just adds bases to the N possibilities and increases the numbers which results in increased occurrence
+                ###uncertain bases should really just be removed
                 list_replacements[-1].append(list_snps[i].wt)
+            #for all other baes, 
             else:
-                list_snps[i].alt = list_replacements[index_value][0]
+                list_snps[i].alt = list_replacements[index_value][0] #replaces the ambiguous alternative with its first possibility
+                #this loop adds the remaining alternatives to the list of SNPs
                 for replacement in list_replacements[index_value][1:]:
                     temp_snp = SNP(list_snps[i].wt, replacement,list_snps[i].pos,'bogus/bogus',list_snps[i].line_beginning,list_snps[i].number_in_line)
                     temp_snp.file = list_snps[i].file
@@ -714,7 +725,9 @@ def run_RNAstructure_fold(sequence_fasta, snp):
 
 #this function takes the extracted data from both the pks and the blast to find SNPs in pks
 def check_snps_in_pks(input_file, putative_pks_input_file, this_run_num):
+    #this grabs all the SNPs found by the BLASTn search
     list_snps = extract_data_from_blastn(input_file)
+    #this grabs the regions of interest from the input file
     list_pks = extract_putative_pks(putative_pks_input_file)
     try:
         os.mkdir('putative_SNitches')
@@ -741,6 +754,7 @@ def check_snps_in_pks(input_file, putative_pks_input_file, this_run_num):
                 SNPS_in_pk.append(SNP)
         if indel_questino == True:
             break
+        #loops through only SNPs in regions of interest
         for SNP in SNPS_in_pk:
             print(os.getcwd())
             os.chdir(home_directory_path+'SARS_CoV_2/putative_SNitches')
