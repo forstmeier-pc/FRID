@@ -31,12 +31,15 @@ class putative_pk:
         self.snp_string = ''
         self.relevant_sequence = sequence
 
+    #this function takes a SNP object as an input and creates the a new pseudoknot object with the proper mutated sequence
     def create_SNP(self, SNP):
         self.sequence = rna_to_dna(self.sequence)
-        print(self.sequence)
-        print(self.five_prime_boundary, self.three_prime_boundary, self.length)
-        print(int(SNP.pos)-int(self.five_prime_boundary))
+        #print(self.sequence)
+        #print(self.five_prime_boundary, self.three_prime_boundary, self.length)
+        #print(int(SNP.pos)-int(self.five_prime_boundary))
+        #verifies that the WT held by the SNP matches the WT of the sequence
         if self.sequence[int(SNP.pos)-int(self.five_prime_boundary)] == SNP.wt:
+            #creates the new sequence with the SNP in the middle, instead of the WT base, bounded by the ends of the PK module predicted sequence
             snp_sequence = self.sequence[:SNP.pos-int(self.five_prime_boundary)] + '|' +SNP.alt +'|'+ self.sequence[SNP.pos-int(self.five_prime_boundary)+1:]
             #if SNP[2] < 61:
             #    snp_sequence = snp_sequence[:SNP[2]+60]
@@ -51,6 +54,7 @@ class putative_pk:
             print(SNP.extol(), 'WT base is not found in the sequence')
             return False
         snp_sequence = snp_sequence.replace('|', '')
+        #creates another putative_ok object (a daughter of the current one) which is the same as the current object except that the new one contains the mutant sequence and status
         snp_pk = putative_pk(self.five_prime_boundary, self.three_prime_boundary, self.five_bond, self.three_bond, self.avg_z, self.median_z, self.high_z, self.num_pks, self.label, self.label_location, self.admin, self.length, self.nearby_labels, snp_sequence)
         snp_pk.is_snp = True
         return snp_pk
@@ -75,9 +79,11 @@ class SNP:
         self.ref_pk_filename = ''
         self.ref_snp_file_name = ''
     
+    #creates a list of all the attributes of the object
     def initialize_list(self):
         self.list = [self.pos, self.wt, self.alt, self.occurence, self.snp_dg, self.wt_dg, self.ddg, self.pk_results, self.rnasnp_results]
 
+    #makes and returns the list of the up-to-date attributes of the object
     def extol(self):
         self.initialize_list()
         new_list = []
@@ -88,6 +94,7 @@ class SNP:
 
 def get_snp_location_from_list(SNP):
     return int(SNP[1])
+
 #this put blastn and snp outputs into foldesr
 def organize_genome_folder():
     try:
@@ -106,6 +113,7 @@ def organize_genome_folder():
             if 'snp' in file:
                 os.rename(file, 'collected_snps_Pass'+file)
 
+#another function to help clean up directories
 def organize_genome_folder_SARS():
     try:
         os.mkdir('blastn_outputs_Pass')
@@ -207,6 +215,8 @@ def individual_blast(query, subject, output):
 #blastn -query -subject -outfmt 1 -out
 #this function is the master function that blasts all genomes in comparison to the reference genome and runs all subsequent programs
 
+#this function serves to return sequences for all SNPs that did not appear in any putative PKs
+#these sequences will be folded in RNAstructure to determine ddG
 def sequence_remaining_snps(snp):
     ref_file = home_directory_path+ 'SARS_CoV_2/NC_045512.2_SARS_CoV_2_ref_seq.fasta'
     dir_name = 'putative_SNitches/'
@@ -227,6 +237,8 @@ def sequence_remaining_snps(snp):
     temp_file.close()
     return temp_file_name
 
+#this function serves to return sequences for all WT bases of SNPs that did not appear in any putative PKs
+#these sequences will be folded in RNAstructure to determine ddG
 def sequence_remaining_wt_ref(snp):
     ref_file = home_directory_path+ 'SARS_CoV_2/NC_045512.2_SARS_CoV_2_ref_seq.fasta'
     dir_name = 'putative_SNitches/'
@@ -242,6 +254,7 @@ def sequence_remaining_wt_ref(snp):
     temp_file.close()
     return temp_file_name
 
+#this is the master, topmost function of this script and it is called in the .pbs script
 def run_blastn(putative_pks_input_file):
     #this is the principle functional of the RSC module
     print(time.ctime(time.time()), 'time')
@@ -273,6 +286,7 @@ def run_blastn(putative_pks_input_file):
     for num_file, file in enumerate(os.listdir()):
         print('\n==========================================================\n'+file+'\n')
         #this ensures that it is a genomic file that is being scanned
+        #this allows for priority genomes to be run
         if 'temp_file' not in file and 'Pass' not in file and 'blastn' not in file and 'snps' not in file and 'priority' in file:
         #if file == 'MT451283.1Severeacuterespiratorysyndromecoronavirus.fasta':
             all_files.append(file)
@@ -290,16 +304,16 @@ def run_blastn(putative_pks_input_file):
             ###directory location is in SARS_CoV_2
             #this runs the rest of the script
             file_snps = check_snps_in_pks('all_SARS_CoV_2_genomes_no_ref/'+temp_file_name, putative_pks_input_file, this_run_num)
-            #this collects the sequence specific SNPs
+            #sorts and writes out SNPs that were found
             file_snps.sort(key=lambda x:x.pos)
             for lst in file_snps:
                 all_snps.append(lst)
                 snp_file_string += (str(lst.wt) +' '+str(lst.pos)+' '+str(lst.alt)+'\n')
             snp_file_file.write(file+'\n'+snp_file_string)
-            print(os.getcwd(), 'CCCC')
             os.chdir(home_directory_path+'SARS_CoV_2/all_SARS_CoV_2_genomes_no_ref')
         else:
             continue
+    #scans genomes without priority
     for num_file, file in enumerate(os.listdir()):
         if num_file == 200:
             break
@@ -328,46 +342,55 @@ def run_blastn(putative_pks_input_file):
                 all_snps.append(lst)
                 snp_file_string += (str(lst.wt) +' '+str(lst.pos)+' '+str(lst.alt)+'\n')
             snp_file_file.write(file+'\n'+snp_file_string)
-            print(os.getcwd(), 'CCCC')
             os.chdir(home_directory_path+'SARS_CoV_2/all_SARS_CoV_2_genomes_no_ref')
         else:
             continue
+    #helps clean up directory by moving flies to appropriate directories
     store_rando_files(all_files)
 
     #this collects all the snps from the different sequences and makes sure there are no repeats and counts the number of specific repeats there are
     tracking_snps = []
+    #loops and enumerates all the snps that were found by blastn
     for place, snp in enumerate(all_snps):
+        #puts info into a string
         check_snp = snp.wt+str(snp.pos)+snp.alt
+        #adds unique SNPs to new list
         if check_snp not in tracking_snps:
             tracking_snps.append(check_snp)
             occurence = 1
+            #loops and enumerates remaining SNPs to see if they match the current top-level SNP
             for other_place, other_snps in enumerate(all_snps):
                 other_check = other_snps.wt +str(other_snps.pos)+other_snps.alt
+                #If the SNP occurs again, instead of adding it to the list, the occurrence is increased
                 if check_snp == other_check and place != other_place:
                     occurence += 1
                     snp.isolate.append(other_snps.isolate[0])
             snp.occurence = occurence
+    #deletes empty SNPs
     snps_for_deletion = []
     for place, snp in enumerate(all_snps):
         if snp.occurence == 0:
             snps_for_deletion.append(place)
-
     i = 1
     while i <= len(snps_for_deletion):
         del all_snps[snps_for_deletion[-i]]
         i += 1
 
-
+    #this block makes and sorts the SNPs
     time_id = (time.ctime(time.time())).replace(' ', '_').replace(':', '.')
     all_snps_file = open('all_snps_%s_%s.txt' % (str(this_run_num), time_id), 'w')
     all_snps_string = 'loci\twt\tmu\tOccurences\tdG SNP\tdG wt\tddG\trbSN\tpsSN\tisolates\n'
     all_snps_name_string = ''
     all_snps.sort(key=lambda x:x.pos)
+    #this block writes intermediate output data for the second part of the RSC module, which is directly piped into in the .pbs script
+    #the second part of the module is python2
+    #They were separated because the clusters we were using were unable to switch environments midscript
     intermediate_snpfold_storage_file = open('intermediate.txt', 'a')
     for snp in all_snps:
         snp.initialize_list()
         new_snp = [snp.wt, snp.alt, str(snp.pos),str(snp.pk)]
         if snp.pk !=0:
+            #writes the necessary and formatted data to an intermediate file piped directly into the next file
             intermediate_snpfold_storage_file.write('%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n '%(str(snp.pk), str(snp.snp_string), snp.ref_pk_filename, snp.file, str(snp.rnasnp_results), this_run_num, str(new_snp),'riboSNitch_programs_data', 'True'))
       
         #try:
@@ -384,6 +407,7 @@ def run_blastn(putative_pks_input_file):
         all_snps_name_string += name+'\n'
     all_snps_file.write(time_id+'\n'+all_snps_name_string+'\n'+all_snps_string)
     all_snps_file.close()
+    #helps clean up the directory
     organize_genome_folder_SARS()
     #list_pks = extract_putative_pks(home_directory_path+'SARS_CoV_2/'+ putative_pks_input_file)
     #compile_ROI_data(this_run_num, list_pks)
@@ -435,6 +459,7 @@ def add_snps_nomenclature(list_snps):
                 list_snps.append(temp_snp)
         i += 1
 
+#function serves to determine if a SNP has been previously analyzed
 def snp_already_analyzed(strain_id, wt,loci,mu):
     strain = strain_id.split('/')[1].split('_')[0]
 
@@ -489,6 +514,8 @@ def extract_data_from_blastn(input_file):
                                         snpoly = temp_location_snp
                                         for number, character in enumerate(item):
                                             if number == snpoly[0] and character != '.':
+                                                #this conditional determines if the SNP has already been analyzed by the pipeline
+                                                #if true, the SNP is not analyzed
                                                 if snp_already_analyzed(input_file,snpoly[1], snpoly[2], character) == False:
                                                     temp_snp = SNP(snpoly[1], character, snpoly[2], input_file.replace('_blastn.txt',''), snpoly[3], snpoly[0])
                                                     list_location_snp.append(temp_snp)
@@ -630,9 +657,7 @@ def run_spot_wt_and_snp(ID, ID2, snp_string, snp_sequence, wt_sequence, input_fi
 
 #this function runs SPOT-RNA
 def run_spot_snp(ID, ID2, snp_string, sequence, degree_support, input_file):
-    #based on the function run_spot in ScanFold-Umbrella
-    #Changed to suit the purposes of this script
-    #PATH
+    #makes output directory
     try:
         os.mkdir('SPOT-RNA_pseudoSNitch_data')
     except:
@@ -643,27 +668,26 @@ def run_spot_snp(ID, ID2, snp_string, sequence, degree_support, input_file):
     except:
         pass
     os.chdir(str(ID)+'.drct')
+    #makes a fasta of the input sequence
     temp_fasta = make_struc_fasta(ID, snp_string, sequence)
-    #PATH
-    print(os.getcwd(), 'DDD')
+    #moves into the appropriate SPOT-RNA running directory
     os.chdir('../../../../')
-    print(os.getcwd(), 'EE')
     os.chdir('programs/SPOT-RNA')
     spot_rna_output_path= '../../SARS_CoV_2/putative_SNitches/SPOT-RNA_pseudoSNitch_data/'+str(ID)+'.drct/'
     spot_rna_output_path_huh= spot_rna_output_path
+    #runs SPOT-RNA as a subprocess
     subprocess.run('python3 SPOT-RNA.py --inputs '+spot_rna_output_path_huh+str(temp_fasta)+' --outputs '+spot_rna_output_path_huh, shell=True)
     os.chdir(spot_rna_output_path)
-    #num_pks = find_num_pks(str(pk.five_prime_boundary)+pk.snp_string+'.bpseq')
     #this runs the pseudoknot checker and analyzes the prediction
     is_spot_sig = SPOT_RNA_comparison_pk(ID, ID2, snp_string)
-    #pk.num_pks = num_pks
-    #PATH
     os.chdir('../../')
+    #stores and returns the results
     results = store_real_pseudoSNitches(ID, snp_string, is_spot_sig, 'spot_rna', input_file)
     return results
 
 #this function serves to compare the predicted structure of the SNP with the known from ScanFilter
 def SPOT_RNA_comparison_pk(ID, ID2, snp_string):
+    #uses known data from PK module to compare to... does not need to refold the WT sequence
     comparison = mpk.scorer_for_pks(ID, str(ID)+snp_string+'.ct', home_directory_path+'known_spot_data/'+str(ID2)+".drct/"+str(ID2)+'.ct', 2,2)
     return comparison
 
@@ -708,18 +732,22 @@ def indel(input_file, SNP):
     #os.rename(non_blast, 'Pass_sequences_with_indel_in_putative_pk_region/'+non_blast)
     os.chdir('../../')
 
+#calculates MFE for an RNA structure
 def run_RNAstructure_fold(sequence_fasta, snp):
     fold_output_name = 'Fold_output.ct'
     fold_output = open(fold_output_name, 'w')
+    #folds the sequence to its MFE
     subprocess.run('Fold -mfe %s %s' % (sequence_fasta, fold_output_name),shell=True)
     efn2_output_name = 'efn2_output.txt'
     efn2_output = open(efn2_output_name, 'w')
+    #calculates the energy of the MFE strucutre
     subprocess.run('efn2 %s %s' % (fold_output_name, efn2_output_name), shell=True)
     efn2_reader = open(efn2_output_name, 'r', encoding='utf-8')
     mfe_lines = efn2_reader.readlines()
     info_string = mfe_lines[0].split('= ')[1].replace('\n','')
     os.remove(fold_output_name)
     os.remove(efn2_output_name)
+    #returns energy
     return info_string
 
 
@@ -727,7 +755,7 @@ def run_RNAstructure_fold(sequence_fasta, snp):
 def check_snps_in_pks(input_file, putative_pks_input_file, this_run_num):
     #this grabs all the SNPs found by the BLASTn search
     list_snps = extract_data_from_blastn(input_file)
-    #this grabs the regions of interest from the input file
+    #this grabs the regions of interest from the input file as a list of objects
     list_pks = extract_putative_pks(putative_pks_input_file)
     try:
         os.mkdir('putative_SNitches')
@@ -756,11 +784,12 @@ def check_snps_in_pks(input_file, putative_pks_input_file, this_run_num):
             break
         #loops through only SNPs in regions of interest
         for SNP in SNPS_in_pk:
-            print(os.getcwd())
+            #print(os.getcwd())
             os.chdir(home_directory_path+'SARS_CoV_2/putative_SNitches')
             
-            #now that SNPs have been filtered, this runs all the 
-            print(SNP)
+            
+            #print(SNP)
+            #this makes the SNPs as attributes of the pseudoknot object
             snp_pks = pks.create_SNP(SNP)
             if snp_pks == False:
                 snp_construction_error_file = open('snp_construction_error_file', 'a')
@@ -774,10 +803,12 @@ def check_snps_in_pks(input_file, putative_pks_input_file, this_run_num):
             print ('\nAnalyzing SNP with SPOT-RNA...')
             if snp_pks.snp_string[0] == '-':
                 continue
+            #runs the SNPs through SPOT-RNA for pseudoknto detection
             spot_score = run_spot_snp(snp_pks.five_prime_boundary, snp_pks.five_bond, snp_pks.snp_string, snp_pks.sequence, degree_support, input_file)
-            #we are in putativeSNitches 
+            #sets the position of the SNP relative to the putative pseudoknot object
             loci = SNP.pos-int(pks.five_prime_boundary)
             snp_loci = 61
+            #makes the sequence end with the end of the pseudoknot or up to 60 bp flanking either side of the SNP
             if loci < 61:
                 snp_pks.relevant_sequence = snp_pks.sequence[:loci+60]
                 pks.relevant_sequence = pks.sequence[:loci+60]
@@ -790,21 +821,14 @@ def check_snps_in_pks(input_file, putative_pks_input_file, this_run_num):
                 snp_pks.relevant_sequence = snp_pks.sequence[loci-61:loci+60]
                 pks.relevant_sequence = pks.sequence[loci-61:loci+60]
                 snp_loci = 61
-            print(loci, SNP.extol(), 'OOOO')
-            print(snp_pks.sequence)
-            print(snp_pks.relevant_sequence, 'NNNNN')
-            print(pks.sequence)
-            print(pks.relevant_sequence, 'MMMMM')
             snp_pks.snp_string = SNP.wt +str(snp_loci+1) + SNP.alt
             SNP.snp_string = snp_pks.snp_string
-            #try:
-            #    print('Base Pair Sensitivity: %d / %d = %d \nBase Pair PPV: %d / %d = %d \nPseudoknot Sensitivity: %d / %d = %d \nPseudoknot PPV: %d / %d = %d \n' % (spot_score[0], spot_score[1], float(spot_score[0]/spot_score[1]), spot_score[2], spot_score[3], float(spot_score[2]/spot_score[3]), spot_score[4], spot_score[5], float(spot_score[4]/spot_score[5]),spot_score[6], spot_score[7], float(spot_score[6]/spot_score[7])))
-            #except:
-            #    print('Base Pair Sensitivity: %d / %d\nBase Pair PPV: %d / %d\nPseudoknot Sensitivity: %d / %d\nPseudoknot PPV: %d / %d\n' % (spot_score[0], spot_score[1], spot_score[2], spot_score[3], spot_score[4], spot_score[5], spot_score[6], spot_score[7]))
+            #runs the python3 compatible riboSNitch detection program
             rnasnp_results = riboSNitch_programs(pks, snp_pks, SNP, degree_support, input_file, this_run_num)
             print('Analyzing wt and SNP with ProbKnot...')
+            #runs probknot for further pseudoknot analysis
             prob_results = run_probknot(pks, snp_pks, SNP, input_file)
-
+            #analyzes the RNAsnp results
             riboSN_results = int(rnasnp_results)
             
             SNP.rnasnp_results = riboSN_results
@@ -827,59 +851,14 @@ def check_snps_in_pks(input_file, putative_pks_input_file, this_run_num):
             print('\n_____________________________________\n')
             remove_excess()
             os.chdir('../')
-            #Now again in SARS_CoV_2 drct
-        #this conditional runs the same program if there are 2 SNPs in the same region
-        #if len(SNPS_in_pk) == 2:
-            #os.chdir('putative_SNitches')
-            #orig_location = []
-            #for snp_check in SNPS_in_pk:
-            #    orig_location.append(snp_check.pos)
-            #if int(orig_location[0]) - int(orig_location[1]) == 0:
-            #    continue
-            #snp_string_pre = ''
-            #snp_pk = pks
-            #for SNP in SNPS_in_pk:
-            #    snp_pk = snp_pk.create_SNP(SNP)
-            #    if snp_pks == False:
-            #        snp_construction_error_file = open('snp_construction_error_file', 'a')
-            #        snp_construction_error_file.write(input_file+' '+SNP.extol()+'\n')
-            #        continue
-            #adjustmenet = int(list_snps[0].pos)-61
-            #snp_string_pre += list_snps[0][1]+str(61)+list_snps[0][3]+'_'+list_snps[1][1]+str(int(list_snps[1][2])-adjustmenet)+list_snps[1][3]
-            #snp_pk.snp_string = snp_string_pre[:-1]
-            #snp_pk.is_snp = True
-            #print(snp_string_pre)
-            #print(snp_pk.sequence)
-            #degree_support = 0
-            #print ('\nAnalyzing SNP with SPOT-RNA...')
-            #spot_score = run_spot_snp(snp_pk.five_prime_boundary, snp_pk.five_bond, snp_pk.snp_string, snp_pk.sequence, degree_support, input_file)
-            #loci = SNP[2]-int(pks.five_prime_boundary)
-            #if loci < 61:
-            #    snp_pks.sequence = snp_pks.sequence[:loci+60]
-            #    pks.relevant_sequence = pks.sequence[:loci+60]
-            #elif loci + 60 > len(pks.sequence):
-            #    snp_pks.sequence = snp_pks.sequence[loci-61:]
-            #    pks.relevant_sequence = pks.sequence[loci-61:]
-            #else:
-            #    snp_pks.sequence = snp_pks.sequence[loci-61:loci+60]
-            #    pks.relevant_sequence = pks.sequence[loci-61:loci+60]            
-            #try:
-            #    print('Base Pair Sensitivity: %d / %d = %d \nBase Pair PPV: %d / %d = %d \nPseudoknot Sensitivity: %d / %d = %d \nPseudoknot PPV: %d / %d = %d \n' % (spot_score[0], spot_score[1], float(spot_score[0]/spot_score[1]), spot_score[2], spot_score[3], float(spot_score[2]/spot_score[3]), spot_score[4], spot_score[5], float(spot_score[4]/spot_score[5]),spot_score[6], spot_score[7], float(spot_score[6]/spot_score[7])))
-            #except:
-            #    print('Base Pair Sensitivity: %d / %d\nBase Pair PPV: %d / %d\nPseudoknot Sensitivity: %d / %d\nPseudoknot PPV: %d / %d' % (spot_score[0], spot_score[1], spot_score[2], spot_score[3], spot_score[4], spot_score[5], spot_score[6], spot_score[7]))
-            #riboSNitch_programs(pks, snp_pk, SNP, degree_support, input_file, this_run_num)
-            #print('Analyzing wt and SNP with ProbKnot...')
-            #prob_results = run_probknot(pks, snp_pk, SNP, input_file)
-            #run_ipknopks, snp_pks, SNP, input_file)
-
-            #print('\n_____________________________________\n')
-            ##PATH
-            #os.chdir('../')
 
             
         if len(SNPS_in_pk) >= 2:
             print('\n\n\n &&&&&&&&&&&&&&&&&&&&&&          ADMIN WARNING: MANY SNPs in %s putative pseudoknot          &&&&&&&&&&&&&&&&&&&&&&n\n\n\n'%(pks.five_prime_boundary))
+            #stores pks that have multiple SNPs in the same region (from the same isolate)
+            #programs are only designed to handle 1 SNP at a time
             multiple_snps_in_pk_region(input_file, SNPS_in_pk)
+    #loops through SNPs, not just those in pks, to remove dleetions and to calculate ddGs using RNAstructure
     for SNP in list_snps:
         skip = False
         if 'DEL' in SNP.wt or 'del' in SNP.alt:
@@ -887,31 +866,12 @@ def check_snps_in_pks(input_file, putative_pks_input_file, this_run_num):
         found = False
         if SNP.wt == '-':
             continue
-        #for pk in list_pks:
-         #   try:
-          #      if int(SNP[2])-int(pk.five_prime_boundary)+1 <= 0:
-          #          continue
-         #       snp_string = SNP[1]+str(int(SNP[2])-int(pk.five_prime_boundary)+1)+SNP[3]
-        #        snp_test_file = open('putative_SNitches/'+str(pk.five_prime_boundary)+snp_string+'_SNP.fasta', 'r')
-        #        snp_test_file.close()
-        #        print(str(pk.five_prime_boundary), 'FFFF')
-        #        SNP.append(run_RNAstructure_fold('putative_SNitches/'+str(pk.five_prime_boundary)+snp_string+'_SNP.fasta', SNP))
-        #        temp_file = open('ref.txt', 'w')
-        #        temp_file.write('>ref\n'+pk.sequence[SNP[2]-61:SNP[2]+60])
-        #        temp_file.close()
-        #        print('here')
-        #        SNP.append(run_RNAstructure_fold(temp_file, SNP))
-        #        os.remove(temp_file)
-        #        found = True
-        #        break
-        #    except:
-        #        pass
-        #if found == False:
+        #finds the sequence of the SNPs that were not found using the pks
         temp_name = sequence_remaining_snps(SNP)
-        print(temp_name, 'AAAAA')
+        #calculates the MFE for the SNP
         SNP.snp_dg = (run_RNAstructure_fold(temp_name, SNP))
         temp_name = sequence_remaining_wt_ref(SNP)
-        print(temp_name, 'BBBBB')
+        #calculates the MFE for the WT
         SNP.wt_dg = (run_RNAstructure_fold(temp_name, SNP))
         os.remove(temp_name)
         snp_fe = float(SNP.snp_dg.split(' ')[0])
@@ -920,8 +880,9 @@ def check_snps_in_pks(input_file, putative_pks_input_file, this_run_num):
         wt_fe_er = float(SNP.wt_dg.split(' ')[2])
         total_err = round(wt_fe_er + snp_fe_er, 2)
         d_fe = round(snp_fe - wt_fe, 2)
+        #ocmpares the two MFEs
         SNP.ddg = (str(d_fe)+' '+SNP.wt_dg.split(' ')[1]+' '+str(total_err))
-
+    #return sthe list of the SNP objects with the added information
     return list_snps
 
 def remove_excess():
@@ -929,7 +890,7 @@ def remove_excess():
         if '_SNP' in file or 'RNAsnp' in file:
             os.remove(file)
 
-#this makes the sequence files that the following programs use
+#this makes the sequence files for riboSNitch prediction programs
 def make_seq_files(pk):
     #these files are not in fasta format
     if '.fasta' not in str(pk.five_prime_boundary):
@@ -940,7 +901,6 @@ def make_seq_files(pk):
         temp_fasta_name = temp_fasta_name.replace('.fasta', pk.snp_string+'_SNP.fasta')
     temp_fasta = open(temp_fasta_name, 'w')
     pk.relevant_sequence = dna_to_rna(pk.relevant_sequence)
-    #temp_fasta.write('>'+str(temp_fasta_name).replace('.fasta', '')+'\n')
     temp_fasta.write(pk.relevant_sequence)
     temp_fasta.close()
     return temp_fasta_name    
@@ -953,7 +913,7 @@ def RNAsnp_significance(RNAsnp_output, RNAsnp_output_name, degree_support):
     RNAsnp_output.close()
     RNAsnp_output = open(RNAsnp_output_name, 'r')
     RNAsnp_output_lines = RNAsnp_output.readlines()
-    print(RNAsnp_output_lines)
+    #this loop ensures that there was no error in RNAsnp
     for num_line, line in enumerate(RNAsnp_output_lines):
         split_lines = line.split('\t')
         if 'SNP' in split_lines[0]:
@@ -964,10 +924,12 @@ def RNAsnp_significance(RNAsnp_output, RNAsnp_output_name, degree_support):
                 error_RNAsnp_file = open('RNAsnp_error_log.txt', 'a')
                 error_RNAsnp_file.write(RNAsnp_output_name+'\n')
                 return None
+    
     if len(data_line) == 1:
         error_RNAsnp_file = open('RNAsnp_error_log.txt', 'a')
         error_RNAsnp_file.write(RNAsnp_output_name+'\n')
         return None
+    #grabs approrpiate values from the output file and returns them in a list
     if float(data_line[6]) <= 0.1:
         d_max = True
         degree_support+=1
@@ -1052,18 +1014,22 @@ def remuRNA_significance(remuRNA_output_name):
         degree_support = 1
     return [change, degree_support,'remuRNA', output_string]
 
+#this function runs RNAsnp and returns the results
 def run_RNAsnp(name, snp_string, wt_filename, snp_SNP_filename, degree_support, input_file, dir_name, default=True):
+    #grabs the tail end of the ID for naming purposes
     if default == True:
         input_ID = input_file.split('/')[1][:-11]
     else:
         input_ID = input_file
+    #names and opens output file
     RNAsnp_output_name = 'RNAsnp_output%s_%s.txt' % (snp_string, input_ID)
     RNAsnp_output = open(RNAsnp_output_name, 'w')
-    print(wt_filename, snp_SNP_filename, 'VVVVV')
+    #runs RNAsnp
     subprocess.run('RNAsnp -f %s -s %s -w 100 > %s' % (wt_filename, snp_SNP_filename, RNAsnp_output_name), shell=True)
+    #grabs the output data from RNAsnp outputfile
     is_RNAsnp_sig = RNAsnp_significance(RNAsnp_output, RNAsnp_output_name, degree_support)
+    #reformants, stores, and returns RNAsnp results
     if is_RNAsnp_sig != None:
-        print(is_RNAsnp_sig[:3], '\n')
         store_real_riboSNitches(name, snp_string, is_RNAsnp_sig, is_RNAsnp_sig[3], input_file, default)
         os.rename(RNAsnp_output_name,dir_name+'/'+RNAsnp_output_name )
     return is_RNAsnp_sig
@@ -1093,14 +1059,14 @@ def set_up_intermediate_SNPfold(ID, snp_string, wt_filename, input_file, degree_
     intermediate_snpfold_storage_file.write('%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n '%(str((ID)), str(snp_string), wt_filename, input_file, str(0), str(this_run_num), str(snp_list), dir_name, str(default)))
     intermediate_snpfold_storage_file.close()
 
-#this runs both of the riboSNitch-finding programs to determine if there is a change in the secondary structure due to a SNP, or multiple SNPs
+#this runs RNAsnp to determine if there is a change in the secondary structure due to a SNP, or multiple SNPs
 def riboSNitch_programs(pk, snp_pk, SNP, degree_support, input_file, this_run_num):
+    #formants SNP information
     snp_string = snp_pk.snp_string.replace('_', '-')
+    #makes appropriate sequence files, not in fasta format
     pk_filename = make_seq_files(pk)
     snp_pk_filename = make_seq_files(snp_pk)
-    print(snp_pk_filename, 'KKKKK', os.getcwd())
     snp_SNP_filename = snp_string+'.fasta'
-    print(snp_string)
     snp_SNP_file = open(snp_SNP_filename, 'w')
     snp_SNP_file.write(snp_string)
     snp_SNP_file.close()
@@ -1110,6 +1076,7 @@ def riboSNitch_programs(pk, snp_pk, SNP, degree_support, input_file, this_run_nu
     except:
         pass
     print('Analysing with RNAsnp...')
+    #runs and stores RNAsnp results
     is_rnasnp_sig = run_RNAsnp(snp_pk.five_prime_boundary, snp_string, pk_filename, snp_SNP_filename, degree_support, input_file, dir_name)
     
     os.chdir('../')
@@ -1119,33 +1086,29 @@ def riboSNitch_programs(pk, snp_pk, SNP, degree_support, input_file, this_run_nu
     SNP.ref_snp_file_name = ref_snp_file_name
     ref_snp_file_name.write('>'+ref_pk_filename+'\n'+pk.relevant_sequence)
     os.chdir('putative_SNitches')
-#    intermediate_snpfold_storage_file = open('intermediate.txt', 'a')
-#    try:
-#        intermediate_snpfold_storage_file.write('%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n '%(str(snp_pk.five_prime_boundary), str(snp_string), ref_pk_filename, input_file, str(is_rnasnp_sig[1]), this_run_num, str(SNP),dir_name, 'True'))
-#    except:
-#        intermediate_snpfold_storage_file.write('%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n '%(str(snp_pk.five_prime_boundary), str(snp_string), ref_pk_filename, input_file, str(is_rnasnp_sig), this_run_num, str(SNP),dir_name, 'True'))
-#      
-#    intermediate_snpfold_storage_file.close()
     
     os.rename(snp_string+'.fasta', dir_name+'/'+snp_string+'.fasta')
-
+    #returns results
     if is_rnasnp_sig != None:
         return is_rnasnp_sig[1]
     else:
         return None
 
+#runs pseudoknot analysis using probknot
 def run_probknot(pk, snp_pk, SNP, input_file):
+    #moves into the appropriate directory
     try:
         os.mkdir('prob_knot_verification')
     except:
         pass
     os.chdir('prob_knot_verification')
+    #makes output files
     probknot_output_ct = str(pk.five_prime_boundary)+pk.snp_string+'_probknot.ct'
     probknot_snp_output_ct = str(pk.five_prime_boundary)+snp_pk.snp_string+'_snp_probknot.ct'
     scorer_output = str(pk.five_prime_boundary)+snp_pk.snp_string+'_scorer_output.txt'
 
     pk_seq_file = '../'+str(pk.five_prime_boundary)+'.fasta'
-    print(pk_seq_file, 'FFFFF', os.getcwd())
+    #runs the program as a subprocess for the WT sequence
     subprocess.run('ProbKnot --sequence %s %s' % (pk_seq_file, probknot_output_ct), shell=True)
     snp_seq_file = pk_seq_file.replace('.fasta', snp_pk.snp_string+'_SNP.fasta')
     
@@ -1158,9 +1121,10 @@ def run_probknot(pk, snp_pk, SNP, input_file):
     new_file.write(old_line)
     new_file.close()
 
-    print(snp_pk.snp_string, snp_seq_file, 'GGGGG')
+    #runs the programs as a subprocess for the SNP sequence
     subprocess.run('ProbKnot --sequence %s %s' % (snp_seq_file, probknot_snp_output_ct), shell=True)
 
+    #compares the two pseudoknots using CountPseuku functions
     is_prob_knot_sig = mpk.scorer_for_pks(pk.five_prime_boundary, probknot_snp_output_ct, probknot_output_ct)
     #PATH
     os.chdir('../')
@@ -1192,10 +1156,12 @@ def run_probknot_general(ID, snp_string, snp_filename, wt_filename, input_file):
 
 #stores any SNP that has been found to alter structure of the pseudoknot
 def store_real_pseudoSNitches(ID, snp_string, comparison, test_name, input_file):
+    #analyzes the output from the countpseudu function
     if comparison[4] == comparison[5] and comparison[6] == comparison[7]:
         pass
         return None
     else:
+        #formats output
         try:
             os.mkdir('putative_pseudoSNitches')
         except:
@@ -1237,6 +1203,7 @@ def store_real_riboSNitches(name,pk_snp_string, validation, data, input_file, de
         temp_file.write('>'+str(name)+'_'+pk_snp_string+'\n'+validation[2]+'\n'+input_file+'\n'+data)
         print('The SNP causes a predicted RiboSNitch\n')
 
+#this function helps clean up file directories
 def store_rando_files(all_files):
     #os.chdir('putative_SNitches')
     SNP_file_name = 'SNP_files_Pass.drct'
@@ -1253,8 +1220,6 @@ def store_rando_files(all_files):
         if '.drct' not in file:
             if 'SNP' in file:
                 os.rename(file, SNP_file_name+'/'+file)
-            #elif '.fasta' in file:
-            #    os.rename(file, actual_seq_file+'/'+file)
     for file in all_files:
         os.rename(file, actual_seq_file+'/'+file)
 #check_snps_in_pks(blast_filename, pk_filename)
