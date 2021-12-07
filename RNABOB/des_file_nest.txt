@@ -1,0 +1,7 @@
+HDV_plus10_N9_2MM_0MM
+HHR_Type3_general_Descriptor_Stem1-4_L10_extended_121MM
+Twister_P1_No_P3_PK1_MMAll11
+Twister_P1WP3_PK1_Ex
+guanine_G1_Rbsw
+adenine_A1_Rbsw
+2_prime_deoxyguanosine_2p1_Rbsw

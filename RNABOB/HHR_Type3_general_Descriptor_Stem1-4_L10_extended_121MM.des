@@ -1,0 +1,11 @@
+h1 s1 h2 s2 h2' h3 s3 h3' s4 h4 s5 h4' s6 h1'
+h1 1:1 ****NNNG:CNNN****
+s1 0 UN
+h2 2:2 ****NNNNNN:NNNNNN****
+s2 0 N[10]*****
+h3 0:0 C:G
+s3 0 TGAN
+s4 0 A
+h4 1:1 ****NNNN:NNNN****
+s5 0 N[10]*****
+s6 0 GAAA

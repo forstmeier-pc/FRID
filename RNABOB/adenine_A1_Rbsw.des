@@ -1,0 +1,10 @@
+#adenine A1 Riboswitch from Emma
+h1 s1 h2 s2 h2' s3 h3 s4 h3' s5 h1'
+h1 1:1 **NNNNUA:UANNNN**
+s1 0 UAA
+h2 1:1 NNNNNN*:*NNNNNN
+s2 0 NAUANGG
+s3 0 GUNUCUAC
+h3 3:3 C*NN*A*:*U*NN*C
+s4 0 CCN**AA
+s5 0 AU
