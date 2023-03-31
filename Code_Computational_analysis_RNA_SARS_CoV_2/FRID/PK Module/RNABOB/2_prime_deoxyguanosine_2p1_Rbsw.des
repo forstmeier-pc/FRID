@@ -1,0 +1,16 @@
+#2_prime_deoxyguanosine_2p1_Rbsw from Emma
+s1 h1 s2 h2 s3 h2' s4 h3 s5 h4 s6 h4' s7 h3' s8 h1' s9
+s1 0 NNAANU*AAUA*NAAN
+h1 2:2 NNCUUAUA:UAUAAGNN
+s2 0 CA*
+h2 1:1 NNNANC:GNUNNN
+s3 0 AUA*NGG
+s4 0 GANCNGC
+h3 0:0 C:G
+s5 0 *
+h4 1:1 **NNNA:UNNN**
+s6 0 CC*A
+s7 0 *
+s8 0 AC
+s9 0 *N*AN***UUUU
+

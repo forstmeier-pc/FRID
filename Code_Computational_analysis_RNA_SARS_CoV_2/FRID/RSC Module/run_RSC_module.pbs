@@ -1,0 +1,21 @@
+#PBS -l nodes=1:ppn=20
+#PBS -l walltime=23:59:00
+#PBS -l pmem=10gb
+#PBS -A open
+
+module load python
+module load gcc/5.3.1
+module load ncbi-blast/2.6.0 
+
+cd work
+#activates python3 environment
+source activate my_env
+#runs bulk of RSC module
+python pk_runner_ACI.py
+
+#loads python2
+module load python/2.7.14-anaconda5.0.1
+#loads python2 SNPfold environment
+source activate py_2_env
+#runs SNPfold portion of the RSC module
+python SNPfold_ACI.py -i SARS_CoV_2/

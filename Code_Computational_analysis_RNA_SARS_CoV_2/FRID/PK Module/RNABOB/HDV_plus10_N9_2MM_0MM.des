@@ -1,0 +1,13 @@
+s1 h1 s2 h2 h3 s3 h4 s4 h3' h1' h4' s5 h5 s6 h5' s7 h2'
+s1 0 N[9]
+h1 2:2 ***GNNNNNN:NNNNNNY***
+s2 0 N[2]
+h2 0:0 ***NNNNNNN:NNNNNNN***
+h3 0:0 ***NNN:NNN***
+s3 0 N[2]
+h4 0:0 **C:G**
+s4 0 N[4]
+s5 0 N
+h5 0:0 ***NNNNNNN:NNNNNNN***
+s6 0 N[4]
+s7 0 N[4]

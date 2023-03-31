@@ -1,0 +1,5 @@
+NA	NA	NA	start	stop	NA	level	name	ID
+NC_045512.2	RefSeq	five_prime_UTR	1	265	.	3	5' UTR	ID=id-NC_045512.2:1..265;gbkey=5'UTR
+NC_045512.2	RefSeq	gene	266	21555	.	1		ID=gene-GU280_gp01;Dbxref=GeneID:43740578;Name=ORF1ab;gbkey=Gene;gene=ORF1ab;gene_biotype=protein_coding;locus_tag=GU280_gp01
+NC_045512.2	RefSeq	CDS	266	13468	.	2		ID=cds-YP_009724389.1;Parent=gene-GU280_gp01;Dbxref=Genbank:YP_009724389.1,GeneID:43740578;Name=YP_009724389.1;Note=pp1ab%3B translated by -1 ribosomal frameshift;exception=ribosomal slippage;gbkey=CDS;gene=ORF1ab;locus_tag=GU280_gp01;product=ORF1ab polyprotein;protein_id=YP_009724389.1
+NC_045512.2	RefSeq	stem_loop	13476	13542	.	3	FSE	ID=id-GU280_gp01;Dbxref=GeneID:43740578;function=Coronavirus frameshifting stimulation element stem-loop 1;gbkey=stem_loop;gene=ORF1ab;inference=COORDINATES: profile:Rfam-release-14.1:RF00507%2CInfernal:1.1.2;locus_tag=GU280_gp01

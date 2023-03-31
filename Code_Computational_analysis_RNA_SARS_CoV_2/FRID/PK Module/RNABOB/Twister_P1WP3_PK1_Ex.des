@@ -1,0 +1,12 @@
+h1 s1 h2 h3 h4 s2 h4' h5 s3 h3' s4 h5' s5 h2' s6 h1'
+h1 1:1 **NNNN:NNNN**
+s1 0 NAA
+h2 1:1 **NNNN:NNNN**
+h3 0:0 *NY:GN*
+h4 2:2 ******NNNNN:NNNNN******
+s2 0 N[15]
+h5 1:1 ***NNN:NNN***
+s3 0 GUNNNAA
+s4 0 C
+s5 0 N[9]
+s6 0 GANNN***
